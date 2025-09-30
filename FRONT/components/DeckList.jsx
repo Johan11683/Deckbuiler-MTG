@@ -6,73 +6,117 @@ import styles from "../styles/DeckList.module.scss";
 export default function DeckList() {
   const [decks, setDecks] = useState([]);
   const [newDeckName, setNewDeckName] = useState("");
-  const [loaded, setLoaded] = useState(false); // ✅ évite d'écrire avant d'avoir lu
+  const [loading, setLoading] = useState(true);
 
-  // Charger depuis localStorage au montage
+  // Charger les decks depuis l'API
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("decks");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setDecks(parsed);
+    const fetchDecks = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.warn("Pas de token trouvé, utilisateur non connecté");
+          return;
+        }
+
+        const res = await fetch("http://localhost:4000/api/decks", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error("Erreur API :", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        setDecks(data);
+      } catch (err) {
+        console.error("Erreur fetch decks:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Lecture localStorage échouée:", e);
-    } finally {
-      setLoaded(true);
-    }
+    };
+
+    fetchDecks();
   }, []);
 
-  // Sauvegarder dès que decks change, mais seulement après le chargement initial
-  useEffect(() => {
-    if (!loaded) return; // ✅ garde-fou
-    localStorage.setItem("decks", JSON.stringify(decks));
-  }, [decks, loaded]);
-
-  const handleAddDeck = () => {
+  // Ajouter un deck
+  const handleAddDeck = async () => {
     if (!newDeckName.trim()) return;
-    const newDeck = {
-      id: Date.now(),
-      name: newDeckName.trim(),
-      cards: [], // ✅ deck existe même sans cartes
-    };
-    setDecks((prev) => [...prev, newDeck]);
-    setNewDeckName("");
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:4000/api/decks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newDeckName.trim() }),
+      });
+
+      if (!res.ok) {
+        alert("Erreur lors de l’ajout du deck");
+        return;
+      }
+
+      const createdDeck = await res.json();
+      setDecks((prev) => [...prev, createdDeck]);
+      setNewDeckName("");
+    } catch (err) {
+      console.error("Erreur ajout deck:", err);
+    }
   };
 
-  const handleDeleteDeck = (id) => {
-    setDecks((prev) => prev.filter((deck) => deck.id !== id));
+  // Supprimer un deck
+  const handleDeleteDeck = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:4000/api/decks/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        alert("Erreur lors de la suppression du deck");
+        return;
+      }
+
+      setDecks((prev) => prev.filter((deck) => deck._id !== id));
+    } catch (err) {
+      console.error("Erreur suppression deck:", err);
+    }
   };
+
+  if (loading) return <p>Chargement des decks...</p>;
 
   return (
-    <div className={styles?.wrapper || ""}>
-      <div className={styles?.addForm || ""}>
+    <div className={styles.wrapper}>
+      <div className={styles.addForm}>
         <input
           type="text"
           value={newDeckName}
           onChange={(e) => setNewDeckName(e.target.value)}
-          placeholder="Nom du deck"
+          placeholder="Name your deck"
         />
-        <button onClick={handleAddDeck}>+ Ajouter</button>
+        <button onClick={handleAddDeck}>+ Add a deck</button>
       </div>
 
-      <ul className={styles?.list || ""} style={!styles ? { listStyle: "none", padding: 0 } : undefined}>
+      <ul className={styles.list}>
         {decks.map((deck) => (
-          <li
-            key={deck.id}
-            className={styles?.item || ""}
-            style={!styles ? { display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" } : undefined}
-          >
+          <li key={deck._id} className={styles.item}>
             <button
-              onClick={() => handleDeleteDeck(deck.id)}
-              className={styles?.deleteBtn || ""}
-              style={!styles ? { background: "transparent", border: "none", cursor: "pointer" } : undefined}
+              onClick={() => handleDeleteDeck(deck._id)}
+              className={styles.deleteBtn}
               aria-label={`Supprimer ${deck.name}`}
               title={`Supprimer ${deck.name}`}
             >
               ❌
             </button>
-            <Link href={`/decks/${deck.id}`} className={styles?.link || ""}>
+            <Link href={`/decks/${deck._id}`} className={styles.link}>
               {deck.name}
             </Link>
           </li>

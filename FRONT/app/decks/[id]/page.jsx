@@ -2,9 +2,9 @@
 import DeckEditor from "../../../components/DeckEditor";
 
 export default async function DeckEditorPage({ params }) {
-  const { id } = await params; // ✅ on attend params
+  const { id } = await Promise.resolve(params);
   return (
-    <main>
+    <main className="container">
       <DeckEditor deckId={id} />
     </main>
   );

@@ -8,25 +8,58 @@ export default function DeckEditor({ deckId }) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
 
-  // Charger le deck courant
+  // Charger le deck depuis l’API
   useEffect(() => {
-    const saved = localStorage.getItem("decks");
-    if (!saved) return;
-    const decks = JSON.parse(saved);
-    const found = Array.isArray(decks) ? decks.find((d) => d.id == deckId) : null;
-    if (found) {
-      if (!Array.isArray(found.cards)) found.cards = [];
-      setDeck(found);
-      setTempName(found.name);
-    }
+    const fetchDeck = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await fetch(`http://localhost:4000/api/decks/${deckId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          console.error("Erreur API:", await res.text());
+          return;
+        }
+
+        const data = await res.json();
+        setDeck(data);
+        setTempName(data.name);
+      } catch (err) {
+        console.error("Erreur fetch deck:", err);
+      }
+    };
+
+    fetchDeck();
   }, [deckId]);
 
-  const persistDeck = (updated) => {
-    const saved = localStorage.getItem("decks");
-    const decks = saved ? JSON.parse(saved) : [];
-    const next = decks.map((d) => (d.id == deckId ? updated : d));
-    localStorage.setItem("decks", JSON.stringify(next));
-    setDeck(updated);
+  // Persister le deck via PATCH
+  const persistDeck = async (updated) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:4000/api/decks/${deckId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updated),
+      });
+
+      if (!res.ok) {
+        console.error("Erreur API:", await res.text());
+        return;
+      }
+
+      const saved = await res.json();
+      setDeck(saved);
+    } catch (err) {
+      console.error("Erreur sauvegarde deck:", err);
+    }
   };
 
   const handleAddCard = () => {
@@ -38,10 +71,7 @@ export default function DeckEditor({ deckId }) {
 
   const handleDeleteCard = (index) => {
     if (!deck) return;
-    const updated = {
-      ...deck,
-      cards: deck.cards.filter((_, i) => i !== index),
-    };
+    const updated = { ...deck, cards: deck.cards.filter((_, i) => i !== index) };
     persistDeck(updated);
   };
 

@@ -4,7 +4,7 @@ import DeckList from "../../components/DeckList";
 export default function DecksPage() {
   return (
     <main className="container">
-      <h1>Mes Decks</h1>
+      <h1>My Decks</h1>
       <DeckList />
     </main>
   );

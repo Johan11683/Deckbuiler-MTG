@@ -1,0 +1,93 @@
+.editor {
+  padding: 1rem;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.inputRename {
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+}
+
+.editBtn,
+.saveBtn,
+.cancelBtn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+}
+
+.saveBtn {
+  color: var(--color-success);
+  &:hover {
+    color: var(--color-success-hover);
+  }
+}
+
+.cancelBtn {
+  color: var(--color-danger);
+  &:hover {
+    color: var(--color-danger-hover);
+  }
+}
+
+.addForm {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1rem 0;
+
+  input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: var(--radius);
+  }
+
+  button {
+    background: var(--color-success);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-success-hover);
+    }
+  }
+}
+
+.cardList {
+  list-style: none;
+  padding: 0;
+
+  .cardItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px solid #ddd;
+  }
+}
+
+.deleteBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  font-size: 1rem;
+
+  &:hover {
+    color: var(--color-danger-hover);
+  }
+}

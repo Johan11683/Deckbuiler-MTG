@@ -1,6 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import styles from "../styles/DeckEditor.module.scss";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function DeckEditor({ deckId }) {
   const [deck, setDeck] = useState(null);
@@ -62,7 +70,7 @@ export default function DeckEditor({ deckId }) {
     return () => clearTimeout(timeout);
   }, [newCardName]);
 
-  // === Ajouter une carte ===
+  // === Ajouter une carte (ou incrémenter si existe) ===
   const handleSelectSuggestion = async (cardName) => {
     try {
       const token = localStorage.getItem("token");
@@ -79,14 +87,18 @@ export default function DeckEditor({ deckId }) {
 
       const cardData = await res.json();
 
-      const cardPayload = {
-        name: cardData.name,
-        scryfallId: cardData.scryfallId || "",
-        imageUrl: cardData.imageUrl || "",
-        manaCost: cardData.manaCost || "",
-        typeLine: cardData.typeLine || "",
-        oracleText: cardData.oracleText || "",
-      };
+        const cardPayload = {
+            name: cardData.name,
+            scryfallId: cardData.scryfallId || "",
+            imageUrl: cardData.imageUrl || "",
+            manaCost: cardData.manaCost || "",
+            typeLine: cardData.typeLine || "",
+            oracleText: cardData.oracleText || "",
+            cmc: cardData.cmc || 0,
+            power: cardData.power || "",
+            toughness: cardData.toughness || "",
+        };
+
 
       if (!cardPayload.name) {
         console.error("⚠️ Pas de nom dans cardPayload, abort");
@@ -119,7 +131,7 @@ export default function DeckEditor({ deckId }) {
     }
   };
 
-  // === Supprimer une carte ===
+  // === Supprimer ou décrémenter ===
   const handleDeleteCard = async (index) => {
     try {
       const token = localStorage.getItem("token");
@@ -133,6 +145,44 @@ export default function DeckEditor({ deckId }) {
       setDeck(updatedDeck);
     } catch (err) {
       console.error("Erreur suppression carte:", err);
+    }
+  };
+
+  // === Dupliquer (incrémente count) ===
+  const handleDuplicateCard = async (card) => {
+    try {
+      const token = localStorage.getItem("token");
+      const cardPayload = {
+        name: card.name,
+        scryfallId: card.scryfallId || "",
+        imageUrl: card.imageUrl || "",
+        manaCost: card.manaCost || "",
+        typeLine: card.typeLine || "",
+        oracleText: card.oracleText || "",
+        cmc: card.cmc || 0,
+      };
+
+      const addRes = await fetch(
+        `http://localhost:4000/api/decks/${deckId}/cards`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(cardPayload),
+        }
+      );
+
+      if (!addRes.ok) {
+        console.error("Erreur API duplication:", await addRes.text());
+        return;
+      }
+
+      const updatedDeck = await addRes.json();
+      setDeck(updatedDeck);
+    } catch (err) {
+      console.error("Erreur duplication carte:", err);
     }
   };
 
@@ -198,8 +248,16 @@ export default function DeckEditor({ deckId }) {
         <button
           className={styles.deleteBtn}
           onClick={() => handleDeleteCard(card.index)}
+          title="Supprimer"
         >
           ❌
+        </button>
+        <button
+          className={styles.duplicateBtn}
+          onClick={() => handleDuplicateCard(card)}
+          title="Ajouter un exemplaire"
+        >
+          ➕
         </button>
         <img
           src={card.imageUrl}
@@ -207,9 +265,12 @@ export default function DeckEditor({ deckId }) {
           className={styles.cardPreview}
           onClick={() => setPreviewCard(card.imageUrl)}
         />
-        {card.name}
+        {card.name} <span className={styles.count}>x{card.count || 1}</span>
       </li>
     ));
+
+  // ✅ Total = somme des counts
+  const totalCount = deck.cards.reduce((sum, c) => sum + (c.count || 1), 0);
 
   return (
     <div className={styles.editor}>
@@ -235,7 +296,10 @@ export default function DeckEditor({ deckId }) {
           </>
         ) : (
           <>
-            <h2>{deck.name}</h2>
+            <h2>
+              {deck.name}{" "}
+              <span className={styles.deckCount}>({totalCount}/100)</span>
+            </h2>
             <button
               onClick={() => setIsEditingName(true)}
               className={styles.editBtn}
@@ -294,23 +358,36 @@ export default function DeckEditor({ deckId }) {
       <div className={styles.cardColumns}>
         {/* Colonne gauche */}
         <div className={styles.cardColumn}>
-          <h3>Creatures</h3>
+          <h3>Creatures ({categories.creatures.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.creatures)}</ul>
-          <h3>Lands</h3>
+          <h3>Lands ({categories.lands.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.lands)}</ul>
-          <h3>Artifacts</h3>
+          <h3>Artifacts ({categories.artifacts.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.artifacts)}</ul>
         </div>
 
         {/* Colonne droite */}
         <div className={styles.cardColumn}>
-          <h3>Sorceries</h3>
+          <h3>Sorceries ({categories.sorceries.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.sorceries)}</ul>
-          <h3>Instants</h3>
+          <h3>Instants ({categories.instants.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.instants)}</ul>
-          <h3>Enchantments</h3>
+          <h3>Enchantments ({categories.enchants.length})</h3>
           <ul className={styles.cardList}>{renderCards(categories.enchants)}</ul>
         </div>
+      </div>
+
+      {/* Mana Curve */}
+      <div style={{ width: "100%", height: 250 }}>
+        <h3>Mana Curve</h3>
+        <ResponsiveContainer>
+          <BarChart data={getManaCurveData(deck.cards)}>
+            <XAxis dataKey="cmc" />
+            <YAxis allowDecimals={false} />
+            <Tooltip />
+            <Bar dataKey="count" fill="#8884d8" />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Modale */}
@@ -330,3 +407,20 @@ export default function DeckEditor({ deckId }) {
     </div>
   );
 }
+
+// === Fonction mana curve ===
+const getManaCurveData = (cards) => {
+  const counts = {};
+  cards.forEach((c) => {
+    const cmc = c.cmc || 0;
+    const key = cmc >= 7 ? "7+" : cmc;
+    counts[key] = (counts[key] || 0) + (c.count || 1);
+  });
+
+  return Object.keys(counts)
+    .sort((a, b) => (a === "7+" ? 999 : a) - (b === "7+" ? 999 : b))
+    .map((key) => ({
+      cmc: key,
+      count: counts[key],
+    }));
+};

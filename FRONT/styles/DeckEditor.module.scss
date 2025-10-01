@@ -119,6 +119,18 @@
   }
 }
 
+.duplicateBtn {
+  background: transparent;
+  border: none;
+  color: var(--color-success);
+  cursor: pointer;
+  font-size: 1rem;
+
+  &:hover {
+    color: var(--color-success-hover);
+  }
+}
+
 /* === Dropdown suggestions === */
 .suggestions {
   position: absolute;

@@ -5,9 +5,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.js";
 import deckRoutes from "./routes/deck.js";
+import cardRoutes from "./routes/cards.js";
 
-
-console.log("DEBUG process.env :", process.env);
 console.log("🔑 JWT_SECRET chargé :", process.env.JWT_SECRET ? "OK" : "❌ undefined");
 
 const app = express();
@@ -22,6 +21,8 @@ app.use(cors({
 // ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/decks", deckRoutes);
+app.use("/api/cards", cardRoutes);
+
 
 // ✅ Connexion MongoDB
 mongoose.connect(process.env.MONGO_URI)

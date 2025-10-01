@@ -72,10 +72,10 @@ export const deleteDeck = async (req, res) => {
 export const addCardToDeck = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cardName } = req.body;
+    const cardData = req.body; // on récupère tout l’objet envoyé
 
-    if (!cardName || cardName.trim() === "") {
-      return res.status(400).json({ message: "Nom de carte requis" });
+    if (!cardData.name || !cardData.scryfallId) {
+      return res.status(400).json({ message: "Nom et ID Scryfall requis" });
     }
 
     const deck = await Deck.findOne({ _id: id, user: req.userId });
@@ -83,7 +83,22 @@ export const addCardToDeck = async (req, res) => {
       return res.status(404).json({ message: "Deck introuvable" });
     }
 
-    deck.cards.push(cardName.trim());
+    // on pousse l’objet complet conforme au schema
+    deck.cards.push({
+      scryfallId: cardData.scryfallId,
+      name: cardData.name,
+      manaCost: cardData.manaCost || "",
+      typeLine: cardData.typeLine || "",
+      oracleText: cardData.oracleText || "",
+      power: cardData.power || "",
+      toughness: cardData.toughness || "",
+      colors: cardData.colors || [],
+      imageUrl: cardData.imageUrl || "",
+      rarity: cardData.rarity || "",
+      setName: cardData.setName || "",
+      cmc: cardData.cmc || 0
+    });
+
     await deck.save();
 
     res.json(deck);
@@ -92,6 +107,7 @@ export const addCardToDeck = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur" });
   }
 };
+
 
 // Supprimer une carte d’un deck
 export const removeCardFromDeck = async (req, res) => {

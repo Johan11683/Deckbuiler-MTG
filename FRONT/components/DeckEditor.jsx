@@ -8,6 +8,7 @@ export default function DeckEditor({ deckId }) {
   const [suggestions, setSuggestions] = useState([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
+  const [previewCard, setPreviewCard] = useState(null); // 🆕 modale
 
   // === Charger le deck ===
   useEffect(() => {
@@ -53,7 +54,6 @@ export default function DeckEditor({ deckId }) {
         const data = await res.json();
         console.log("✅ Réponse brute de l’API:", data);
 
-        // On stocke directement le tableau de strings
         setSuggestions(data || []);
       } catch (err) {
         console.error("Erreur autocomplete:", err);
@@ -68,8 +68,6 @@ export default function DeckEditor({ deckId }) {
   const handleSelectSuggestion = async (cardName) => {
     try {
       const token = localStorage.getItem("token");
-
-      // Récupérer la carte complète depuis ton backend proxy
       const res = await fetch(
         `http://localhost:4000/api/cards/named?name=${encodeURIComponent(
           cardName
@@ -84,9 +82,8 @@ export default function DeckEditor({ deckId }) {
       const cardData = await res.json();
       console.log("🃏 Carte récupérée:", cardData);
 
-      // ⚡ Normalisation stricte : payload attendu par ton back
       const cardPayload = {
-        name: cardData.name, // requis
+        name: cardData.name,
         scryfallId: cardData.scryfallId || "",
         imageUrl: cardData.imageUrl || "",
         manaCost: cardData.manaCost || "",
@@ -99,7 +96,6 @@ export default function DeckEditor({ deckId }) {
         return;
       }
 
-      // POST au backend
       const addRes = await fetch(
         `http://localhost:4000/api/decks/${deckId}/cards`,
         {
@@ -263,10 +259,31 @@ export default function DeckEditor({ deckId }) {
               >
                 ❌
               </button>
-              <img src={card.imageUrl} alt={card.name} width={50} /> {card.name}
+              <img
+                src={card.imageUrl}
+                alt={card.name}
+                className={styles.cardPreview}
+                onClick={() => setPreviewCard(card.imageUrl)}
+              />
+              {card.name}
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Modale */}
+      {previewCard && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setPreviewCard(null)}
+        >
+          <div
+            className={styles.modalContent}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img src={previewCard} alt="Aperçu carte" />
+          </div>
+        </div>
       )}
     </div>
   );

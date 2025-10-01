@@ -7,7 +7,9 @@
   align-items: center;
   gap: 0.5rem;
 
-  h2 { margin: 0; }
+  h2 {
+    margin: 0;
+  }
 }
 
 .inputRename {
@@ -16,7 +18,9 @@
   border-radius: var(--radius);
 }
 
-.editBtn, .saveBtn, .cancelBtn {
+.editBtn,
+.saveBtn,
+.cancelBtn {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -25,27 +29,29 @@
 
 .saveBtn {
   color: var(--color-success);
-  &:hover { color: var(--color-success-hover); }
+  &:hover {
+    color: var(--color-success-hover);
+  }
 }
 
 .cancelBtn {
   color: var(--color-danger);
-  &:hover { color: var(--color-danger-hover); }
+  &:hover {
+    color: var(--color-danger-hover);
+  }
 }
 
 /* === Ajout de carte === */
 .addForm {
   display: flex;
   align-items: flex-start;
-  gap: 0.25rem; /* bouton rapproché */
+  gap: 0.25rem;
   margin: 1rem 0;
-  overflow: visible; /* ✅ ne pas couper la dropdown */
 }
 
 .inputWrapper {
-  flex: 1.5;         /* input élargi ~50% */
-  position: relative;/* dropdown calée sous l’input */
-  overflow: visible; /* ✅ important */
+  flex: 1.5;
+  position: relative;
 }
 
 .inputWrapper input {
@@ -56,16 +62,18 @@
   font-size: 1rem;
 }
 
-.addBtn {
+.addForm button {
   background: var(--color-success);
-  color: #fff;
+  color: white;
   border: none;
   padding: 0.55rem 1rem;
   border-radius: var(--radius);
   cursor: pointer;
   white-space: nowrap;
 
-  &:hover { background: var(--color-success-hover); }
+  &:hover {
+    background: var(--color-success-hover);
+  }
 }
 
 /* === Liste des cartes === */
@@ -88,25 +96,26 @@
   color: var(--color-danger);
   cursor: pointer;
   font-size: 1rem;
-  &:hover { color: var(--color-danger-hover); }
+
+  &:hover {
+    color: var(--color-danger-hover);
+  }
 }
 
 /* === Dropdown suggestions === */
 .suggestions {
-  /* Les styles principaux sont doublés en inline dans le composant
-     pour bypasser tout conflit global, mais on garde la base ici. */
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
-  margin-top: 4px;
+  width: 100%;
   background: #fff;
   border: 1px solid #ccc;
   border-radius: var(--radius);
-  box-shadow: 0 6px 18px rgba(0,0,0,.15);
-  z-index: 9999; /* très haut */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
   max-height: 220px;
   overflow-y: auto;
+  margin-top: 4px;
   padding: 0;
   list-style: none;
   font-size: 0.95rem;
@@ -115,9 +124,51 @@
 .suggestionItem {
   padding: 0.6rem 0.8rem;
   cursor: pointer;
-  transition: background .2s, color .2s;
+  transition: background 0.2s, color 0.2s;
+
   &:hover {
     background: var(--color-success-hover);
-    color: #fff;
+    color: white;
+  }
+}
+
+/* === Preview des cartes === */
+.cardPreview {
+  width: 20px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+/* === Modale pour l’image === */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  cursor: pointer;
+}
+
+.modalContent {
+  background: transparent;
+  padding: 1rem;
+  max-width: 90vw;
+  max-height: 90vh;
+
+  img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
   }
 }

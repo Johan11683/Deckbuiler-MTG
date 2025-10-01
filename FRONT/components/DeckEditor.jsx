@@ -8,7 +8,7 @@ export default function DeckEditor({ deckId }) {
   const [suggestions, setSuggestions] = useState([]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
-  const [previewCard, setPreviewCard] = useState(null); // 🆕 modale
+  const [previewCard, setPreviewCard] = useState(null);
 
   // === Charger le deck ===
   useEffect(() => {
@@ -52,8 +52,6 @@ export default function DeckEditor({ deckId }) {
         );
         if (!res.ok) return;
         const data = await res.json();
-        console.log("✅ Réponse brute de l’API:", data);
-
         setSuggestions(data || []);
       } catch (err) {
         console.error("Erreur autocomplete:", err);
@@ -80,7 +78,6 @@ export default function DeckEditor({ deckId }) {
       }
 
       const cardData = await res.json();
-      console.log("🃏 Carte récupérée:", cardData);
 
       const cardPayload = {
         name: cardData.name,
@@ -167,6 +164,53 @@ export default function DeckEditor({ deckId }) {
 
   if (!deck) return <p>Deck introuvable</p>;
 
+  // === Catégorisation avec priorité (évite doublons) ===
+  const categories = {
+    creatures: [],
+    lands: [],
+    artifacts: [],
+    sorceries: [],
+    instants: [],
+    enchants: [],
+  };
+
+  deck.cards.forEach((c, i) => {
+    const type = c.typeLine?.toLowerCase() || "";
+
+    if (type.includes("creature")) {
+      categories.creatures.push({ ...c, index: i });
+    } else if (type.includes("land")) {
+      categories.lands.push({ ...c, index: i });
+    } else if (type.includes("artifact")) {
+      categories.artifacts.push({ ...c, index: i });
+    } else if (type.includes("sorcery")) {
+      categories.sorceries.push({ ...c, index: i });
+    } else if (type.includes("instant")) {
+      categories.instants.push({ ...c, index: i });
+    } else if (type.includes("enchantment")) {
+      categories.enchants.push({ ...c, index: i });
+    }
+  });
+
+  const renderCards = (cards) =>
+    cards.map((card) => (
+      <li key={card.scryfallId || card.index} className={styles.cardItem}>
+        <button
+          className={styles.deleteBtn}
+          onClick={() => handleDeleteCard(card.index)}
+        >
+          ❌
+        </button>
+        <img
+          src={card.imageUrl}
+          alt={card.name}
+          className={styles.cardPreview}
+          onClick={() => setPreviewCard(card.imageUrl)}
+        />
+        {card.name}
+      </li>
+    ));
+
   return (
     <div className={styles.editor}>
       {/* Header */}
@@ -209,7 +253,7 @@ export default function DeckEditor({ deckId }) {
             type="text"
             value={newCardName}
             onChange={(e) => setNewCardName(e.target.value)}
-            placeholder="Nom de la carte"
+            placeholder="Card Name"
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
@@ -246,30 +290,28 @@ export default function DeckEditor({ deckId }) {
         </button>
       </div>
 
-      {/* Liste des cartes */}
-      {deck.cards.length === 0 ? (
-        <p>Aucune carte pour l’instant</p>
-      ) : (
-        <ul className={styles.cardList}>
-          {deck.cards.map((card, i) => (
-            <li key={card.scryfallId || i} className={styles.cardItem}>
-              <button
-                className={styles.deleteBtn}
-                onClick={() => handleDeleteCard(i)}
-              >
-                ❌
-              </button>
-              <img
-                src={card.imageUrl}
-                alt={card.name}
-                className={styles.cardPreview}
-                onClick={() => setPreviewCard(card.imageUrl)}
-              />
-              {card.name}
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* Colonnes */}
+      <div className={styles.cardColumns}>
+        {/* Colonne gauche */}
+        <div className={styles.cardColumn}>
+          <h3>Creatures</h3>
+          <ul className={styles.cardList}>{renderCards(categories.creatures)}</ul>
+          <h3>Lands</h3>
+          <ul className={styles.cardList}>{renderCards(categories.lands)}</ul>
+          <h3>Artifacts</h3>
+          <ul className={styles.cardList}>{renderCards(categories.artifacts)}</ul>
+        </div>
+
+        {/* Colonne droite */}
+        <div className={styles.cardColumn}>
+          <h3>Sorceries</h3>
+          <ul className={styles.cardList}>{renderCards(categories.sorceries)}</ul>
+          <h3>Instants</h3>
+          <ul className={styles.cardList}>{renderCards(categories.instants)}</ul>
+          <h3>Enchantments</h3>
+          <ul className={styles.cardList}>{renderCards(categories.enchants)}</ul>
+        </div>
+      </div>
 
       {/* Modale */}
       {previewCard && (

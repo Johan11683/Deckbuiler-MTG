@@ -37,50 +37,90 @@ export default function DeckEditor({ deckId }) {
     fetchDeck();
   }, [deckId]);
 
-  // Persister le deck via PATCH
-  const persistDeck = async (updated) => {
+  // ➕ Ajouter une carte
+  const handleAddCard = async () => {
+    if (!newCardName.trim()) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:4000/api/decks/${deckId}`, {
-        method: "PATCH",
+      const res = await fetch(`http://localhost:4000/api/decks/${deckId}/cards`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(updated),
+        body: JSON.stringify({ cardName: newCardName.trim() }),
       });
 
       if (!res.ok) {
-        console.error("Erreur API:", await res.text());
+        console.error("Erreur API ajout carte:", await res.text());
         return;
       }
 
-      const saved = await res.json();
-      setDeck(saved);
+      const updatedDeck = await res.json();
+      setDeck(updatedDeck);
+      setNewCardName("");
     } catch (err) {
-      console.error("Erreur sauvegarde deck:", err);
+      console.error("Erreur ajout carte:", err);
     }
   };
 
-  const handleAddCard = () => {
-    if (!deck || !newCardName.trim()) return;
-    const updated = { ...deck, cards: [...deck.cards, newCardName.trim()] };
-    persistDeck(updated);
-    setNewCardName("");
+  // ❌ Supprimer une carte
+  const handleDeleteCard = async (index) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:4000/api/decks/${deckId}/cards/${index}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.error("Erreur API suppression carte:", await res.text());
+        return;
+      }
+
+      const updatedDeck = await res.json();
+      setDeck(updatedDeck);
+    } catch (err) {
+      console.error("Erreur suppression carte:", err);
+    }
   };
 
-  const handleDeleteCard = (index) => {
-    if (!deck) return;
-    const updated = { ...deck, cards: deck.cards.filter((_, i) => i !== index) };
-    persistDeck(updated);
-  };
+  // 🔄 Persister un deck (rename, etc.)
+const persistDeck = async (updated) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`http://localhost:4000/api/decks/${deckId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updated),
+    });
 
-  const handleRename = () => {
-    if (!tempName.trim() || !deck) return;
-    const updated = { ...deck, name: tempName.trim() };
-    persistDeck(updated);
-    setIsEditingName(false);
-  };
+    if (!res.ok) {
+      console.error("Erreur API persist deck:", await res.text());
+      return;
+    }
+
+    const savedDeck = await res.json();
+    setDeck(savedDeck);
+  } catch (err) {
+    console.error("Erreur persist deck:", err);
+  }
+};
+
+
+  // ✏️ Renommer un deck
+const handleRename = () => {
+  if (!tempName.trim() || !deck) return;
+  persistDeck({ name: tempName.trim() }); // ✅ tu passes juste le name
+  setIsEditingName(false);
+};
+
+
 
   if (!deck) return <p>Deck introuvable</p>;
 
